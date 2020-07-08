@@ -1,22 +1,43 @@
 #include "fastio.h"
 #include "Timer.h"
 
-#define joyX A0
-#define joyY A1
+#define joyDeadzone 20
 
-#define stepX 4
-#define dirX 3
-#define enX 2
+#define joyX 18
+#define joyY 19
 
-unsigned int speedX = 0;
-unsigned int speedY = 0;
+#define stepX 9
+#define dirX 8
+#define enX 7
 
+#define stepY 5
+#define dirY 13
+#define enY 13
+
+enum AXIS
+{
+    X_AXIS,
+    Y_AXIS,
+    NUM_AXIS,
+};
+
+int16_t joyIdlePos = 511;
 ShortTimer analogUpdateTimer;
 
-ISR(TIMER1_COMPA_vect){
-    WRITE(stepX, HIGH);
-    asm("nop");
-    WRITE(stepX, LOW);
+int8_t joyToDirection(int16_t value)
+{
+    int16_t delta = value - joyIdlePos;
+    if (abs(delta) < joyDeadzone)
+        return 0;
+    else if (delta < 0)
+        return -1;
+    else
+        return 1;
+}
+
+uint16_t joyToSpeed(int16_t value)
+{
+    return map(abs(value - joyIdlePos), 0, joyIdlePos, 512, 20);
 }
 
 void st_init()
@@ -33,16 +54,11 @@ void st_init()
     TCCR1A = 0;// set entire TCCR1A register to 0
     TCCR1B = 0;// same for TCCR1B
     TCNT1  = 0;//initialize counter value to 0
-    OCR1A = 256;// = (16*10^6) / (1*1024) - 1 (must be <65536)
-    /* // turn on CTC mode
-    TCCR1B |= (1 << WGM12); */
-    // turn on PWM phase correct mode
-    TCCR1A |= (1 << WGM11) | (1 << WGM10);;
+    TCCR1A |= (1 << WGM10);
     TCCR1B |= (1 << WGM13);
-    // Set CS11 bits for 8 prescaler
-    TCCR1B |= (1 << CS11);// | (1 << CS10);
-    // enable timer compare interrupt
-    TIMSK1 |= (1 << OCIE1A);
+    // TCCR1B |= (1 << CS10);
+    TCCR1B |= (1 << CS11);
+    // OCR1A = TIMER_SPEED;
     CRITICAL_SECTION_END;
 }
 
@@ -50,25 +66,57 @@ void setup() {
     Serial.begin(115200);
     Serial.println(F("start"));
     
-    st_init();
+    SET_OUTPUT(DEBUG_LED);
+    WRITE(DEBUG_LED, HIGH);
+    delay(100);
+    WRITE(DEBUG_LED, LOW);
     
-    speedX = 256;
-    speedY = 100;
+    SET_INPUT(joyX);
+    SET_INPUT(joyY);
+    
+    /* 
+    joyIdlePos = analogRead(joyX);
+    joyIdlePos += analogRead(joyY);
+    joyIdlePos /= 2;
+     */
+    
+    st_init();
+    analogUpdateTimer.start();
 }
 
 void loop() {
-    if (!analogUpdateTimer.running())
-        analogUpdateTimer.start();
-    if (analogUpdateTimer.expired(100))
+    if (analogUpdateTimer.expired(10))
     {
-        char outText[11];
-        int readX = analogRead(joyX);
-        int readY = analogRead(joyY);
-        sprintf(outText, "%i, %i", readX, readY);
+        int16_t readX = analogRead(joyX);
+        int16_t readY = analogRead(joyY);
+        
+        int8_t StepperX_direction = joyToDirection(readX);
+        if (StepperX_direction != 0)
+        {
+            OCR1A = joyToSpeed(readX);
+            WRITE(dirX, (StepperX_direction > 0));
+            TCCR1A |= (1 << COM1A0);
+        }
+        else
+        {
+            TCCR1A &= ~(1 << COM1A0);
+        }
+        
+/*         StepperY_direction = StepperY.joyToDirection(readY);
+        if (StepperY.direction != 0)
+        {
+            StepperY.speedCompare = StepperY.joyToSpeed(readY);
+            WRITE(dirY, (StepperY.direction > 0));
+        } */
+        
+        analogUpdateTimer.start();
+        
+        static char outText[37];
+        sprintf(outText, "%i, %i, %hi, %u", readX, readY, StepperX_direction, OCR1A);
         Serial.println(outText);
     }
     
-    if (Serial.available() > 0)
+/*     if (Serial.available() > 0)
     {
         char getData = Serial.read();
         switch(getData)
@@ -80,10 +128,5 @@ void loop() {
             speedX = 10;
         if (speedX > 300)
             speedX = 300;
-    }
-    
-    CRITICAL_SECTION_START;
-    OCR1A = speedX;
-    CRITICAL_SECTION_END;
-    // Serial.println(speedX);
+    } */
 }
