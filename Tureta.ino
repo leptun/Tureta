@@ -1,7 +1,8 @@
 #include "fastio.h"
 #include "Timer.h"
+#include "speed_lookuptable.h"
 
-#define joyDeadzone 20
+#define joyDeadzone 15
 
 #define joyX 18
 #define joyY 19
@@ -37,7 +38,7 @@ int8_t joyToDirection(int16_t value)
 
 uint16_t joyToSpeed(int16_t value)
 {
-    return map(abs(value - joyIdlePos), 0, joyIdlePos, 512, 20);
+    return calc_timer(map(abs(value - joyIdlePos), joyDeadzone, joyIdlePos, 32, 40000));
 }
 
 void st_init()
@@ -64,6 +65,9 @@ void st_init()
 
 void setup() {
     Serial.begin(115200);
+    
+    // while (!Serial);
+    
     Serial.println(F("start"));
     
     SET_OUTPUT(DEBUG_LED);
@@ -82,6 +86,12 @@ void setup() {
     
     st_init();
     analogUpdateTimer.start();
+    /* for (uint16_t i = 0; i < 0xFFFF; i++)
+    {
+        static char outData[14];
+        sprintf(outData, "%u, %u", i, calc_timer(i));
+        Serial.println(outData);
+    } */
 }
 
 void loop() {
