@@ -70,10 +70,10 @@ void setup() {
     
     Serial.println(F("start"));
     
-    SET_OUTPUT(DEBUG_LED);
-    WRITE(DEBUG_LED, HIGH);
+    SET_OUTPUT(LED_BUILTIN);
+    WRITE(LED_BUILTIN, HIGH);
     delay(100);
-    WRITE(DEBUG_LED, LOW);
+    WRITE(LED_BUILTIN, LOW);
     
     SET_INPUT(joyX);
     SET_INPUT(joyY);
