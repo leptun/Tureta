@@ -38,7 +38,7 @@ int8_t joyToDirection(int16_t value)
 
 uint16_t joyToSpeed(int16_t value)
 {
-    return calc_timer(map(abs(value - joyIdlePos), joyDeadzone, joyIdlePos, 32, 40000));
+    return calc_timer(map(abs(value - joyIdlePos), joyDeadzone, joyIdlePos, 32, 10000));
 }
 
 void st_init()
@@ -57,8 +57,8 @@ void st_init()
     TCNT1  = 0;//initialize counter value to 0
     TCCR1A |= (1 << WGM10);
     TCCR1B |= (1 << WGM13);
-    // TCCR1B |= (1 << CS10);
-    TCCR1B |= (1 << CS11);
+    TCCR1B |= (1 << CS10);
+    // TCCR1B |= (1 << CS11);
     // OCR1A = TIMER_SPEED;
     CRITICAL_SECTION_END;
 }
