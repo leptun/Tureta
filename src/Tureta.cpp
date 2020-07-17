@@ -17,44 +17,289 @@ ShortTimer analogUpdateTimer;
 
 static void timerInit(uint8_t timer)
 {
-    CRITICAL_SECTION_START;
     switch (timer)
     {
-        #if defined(TCCR1B) && defined(CS11) && defined(WGM10) && defined(WGM13)
-        case 1:
-            cbi(TCCR1B, CS11);    // set timer 1 prescale factor to 1
-            sbi(TCCR1B, CS10);
-            sbi(TCCR1A, WGM13);   // put timer 1 in 8-bit phase and frequency correct pwm mode
+      #ifdef TCCR1A
+      #ifdef COM1A1
+      case TIMER1A:
+      #endif //COM1A1
+      #ifdef COM1B1
+      case TIMER1B:
+      #endif //COM1B1
+      #ifdef COM1C1
+      case TIMER1C:
+      #endif //COM1C1
+        cbi(TCCR1B, CS11);
+        sbi(TCCR1B, CS10);
+        sbi(TCCR1A, WGM13);
+        cbi(TCCR1A, WGM10);
         break;
-        #endif
-        #if defined(TCCR3B) && defined(CS31) && defined(WGM30) && defined(WGM33)
-        case 3:
-            cbi(TCCR3B, CS31);    // set timer 3 prescale factor to 1
-            sbi(TCCR3B, CS30);
-            sbi(TCCR3A, WGM33);   // put timer 3 in 8-bit phase and frequency correct pwm mode
+      #endif //TCCR1A
+
+      #ifdef TCCR3A
+      #ifdef COM3A1
+      case TIMER3A:
+      #endif //COM3A1
+      #ifdef COM3B1
+      case TIMER3B:
+      #endif //COM3B1
+      #ifdef COM3C1
+      case TIMER3C:
+      #endif //COM3C1
+        cbi(TCCR3B, CS31);
+        sbi(TCCR3B, CS30);
+        sbi(TCCR3A, WGM33);
+        cbi(TCCR3A, WGM30);
         break;
-        #endif
-        #if defined(TCCR4B) && defined(CS41) && defined(WGM40) && defined(WGM43)
-        case 4:
-            cbi(TCCR4B, CS41);    // set timer 4 prescale factor to 1
-            sbi(TCCR4B, CS40);
-            sbi(TCCR4A, WGM43);   // put timer 4 in 8-bit phase and frequency correct pwm mode
+      #endif //TCCR3A
+
+      #if defined(TCCR4C) && !defined(COM4D1)
+      #ifdef COM4A1
+      case TIMER4A:
+      #endif //COM4A1
+      #ifdef COM4B1
+      case TIMER4B:
+      #endif //COM4B1
+      #ifdef COM4C1
+      case TIMER4C:
+      #endif //COM4C1
+        cbi(TCCR4B, CS41);
+        sbi(TCCR4B, CS40);
+        sbi(TCCR4A, WGM43);
+        cbi(TCCR4A, WGM40);
         break;
-        #endif
+      #endif //defined(TCCR4C) && !defined(COM4D1)
+
+      #ifdef TCCR5A
+      #ifdef COM5A1
+      case TIMER5A:
+      #endif //COM5A1
+      #ifdef COM5B1
+      case TIMER5B:
+      #endif //COM5B1
+      #ifdef COM5C1
+      case TIMER5C:
+      #endif //COM5C1
+        cbi(TCCR5B, CS51);
+        sbi(TCCR5B, CS50);
+        sbi(TCCR5A, WGM53);
+        cbi(TCCR5A, WGM50);
+        break;
+      #endif //TCCR5A
+
+      case NOT_ON_TIMER:
+      default:
+        Serial.print(F("Error: "));
+        Serial.print(timer);
+        Serial.println(F(" is not a valid timer!"));
     }
-    CRITICAL_SECTION_END;
+}
+
+static void timerSet(uint8_t timer, uint16_t val)
+{
+    switch (timer)
+    {
+        #ifdef TCCR1A
+        #ifdef COM1A1
+            case TIMER1A:
+                sbi(TCCR1A, COM1A1);
+                ICR1 = val;
+            break;
+        #endif //COM1A1
+        #ifdef COM1B1
+            case TIMER1B:
+                sbi(TCCR1B, COM1B1);
+                ICR1 = val;
+            break;
+        #endif //COM1B1
+        #ifdef COM1C1
+        case TIMER1C:
+            case TIMER1C:
+                sbi(TCCR1C, COM1C1);
+                ICR1 = val;
+            break;
+        #endif //COM1C1
+        #endif //TCCR1A
+
+        #ifdef TCCR3A
+        #ifdef COM3A1
+            case TIMER3A:
+                sbi(TCCR3A, COM3A1);
+                ICR3 = val;
+            break;
+        #endif //COM3A1
+        #ifdef COM3B1
+            case TIMER3B:
+                #if defined(__AVR_ATmega328PB__) // Fix 324PB/328PB silicon bug
+                sbi(PORTD, PD2);
+                #elif defined(__AVR_ATmega324PB__)
+                sbi(PORTB, PB7);
+                #endif
+                sbi(TCCR3B, COM3B1);
+                ICR3 = val;
+            break;
+        #endif //COM3B1
+        #ifdef COM3C1
+        case TIMER3C:
+            case TIMER3C:
+                sbi(TCCR3C, COM3C1);
+                ICR3 = val;
+            break;
+        #endif //COM3C1
+        #endif //TCCR3A
+
+        #if defined(TCCR4C) && !defined(COM4D1)
+        #ifdef COM4A1
+            case TIMER4A:
+                sbi(TCCR4A, COM4A1);
+                ICR4 = val;
+            break;
+        #endif //COM4A1
+        #ifdef COM4B1
+            case TIMER4B:
+                #if defined(__AVR_ATmega328PB__) // Fix 324PB/328PB silicon bug
+                sbi(PORTD, PD2);
+                #elif defined(__AVR_ATmega324PB__)
+                sbi(PORTB, PB7);
+                #endif
+                sbi(TCCR4B, COM4B1);
+                ICR4 = val;
+            break;
+        #endif //COM4B1
+        #ifdef COM4C1
+        case TIMER4C:
+            case TIMER4C:
+                sbi(TCCR4C, COM4C1);
+                ICR4 = val;
+            break;
+        #endif //COM4C1
+        #endif //defined(TCCR4C) && !defined(COM4D1)
+
+        #ifdef TCCR5A
+        #ifdef COM5A1
+            case TIMER5A:
+                sbi(TCCR5A, COM5A1);
+                ICR5 = val;
+            break;
+        #endif //COM5A1
+        #ifdef COM5B1
+            case TIMER5B:
+                sbi(TCCR5B, COM5B1);
+                ICR5 = val;
+            break;
+        #endif //COM5B1
+        #ifdef COM5C1
+        case TIMER5C:
+            case TIMER5C:
+                sbi(TCCR5C, COM5C1);
+                ICR5 = val;
+            break;
+        #endif //COM5C1
+        #endif //TCCR5A
+    }
+}
+
+static void timerDisable(uint8_t timer)
+{
+    switch (timer)
+    {
+        #ifdef TCCR1A
+        #ifdef COM1A1
+            case TIMER1A:
+                cbi(TCCR1A, COM1A1);
+            break;
+        #endif //COM1A1
+        #ifdef COM1B1
+            case TIMER1B:
+                cbi(TCCR1B, COM1B1);
+            break;
+        #endif //COM1B1
+        #ifdef COM1C1
+        case TIMER1C:
+            case TIMER1C:
+                cbi(TCCR1C, COM1C1);
+            break;
+        #endif //COM1C1
+        #endif //TCCR1A
+
+        #ifdef TCCR3A
+        #ifdef COM3A1
+            case TIMER3A:
+                cbi(TCCR3A, COM3A1);
+            break;
+        #endif //COM3A1
+        #ifdef COM3B1
+            case TIMER3B:
+                #if defined(__AVR_ATmega328PB__) // Fix 324PB/328PB silicon bug
+                cbi(PORTD, PD2);
+                #elif defined(__AVR_ATmega324PB__)
+                cbi(PORTB, PB7);
+                #endif
+                cbi(TCCR3B, COM3B1);
+            break;
+        #endif //COM3B1
+        #ifdef COM3C1
+        case TIMER3C:
+            case TIMER3C:
+                cbi(TCCR3C, COM3C1);
+            break;
+        #endif //COM3C1
+        #endif //TCCR3A
+
+        #if defined(TCCR4C) && !defined(COM4D1)
+        #ifdef COM4A1
+            case TIMER4A:
+                cbi(TCCR4A, COM4A1);
+            break;
+        #endif //COM4A1
+        #ifdef COM4B1
+            case TIMER4B:
+                #if defined(__AVR_ATmega328PB__) // Fix 324PB/328PB silicon bug
+                cbi(PORTD, PD2);
+                #elif defined(__AVR_ATmega324PB__)
+                cbi(PORTB, PB7);
+                #endif
+                cbi(TCCR4B, COM4B1);
+            break;
+        #endif //COM4B1
+        #ifdef COM4C1
+        case TIMER4C:
+            case TIMER4C:
+                cbi(TCCR4C, COM4C1);
+            break;
+        #endif //COM4C1
+        #endif //defined(TCCR4C) && !defined(COM4D1)
+
+        #ifdef TCCR5A
+        #ifdef COM5A1
+            case TIMER5A:
+                cbi(TCCR5A, COM5A1);
+            break;
+        #endif //COM5A1
+        #ifdef COM5B1
+            case TIMER5B:
+                cbi(TCCR5B, COM5B1);
+            break;
+        #endif //COM5B1
+        #ifdef COM5C1
+        case TIMER5C:
+            case TIMER5C:
+                cbi(TCCR5C, COM5C1);
+            break;
+        #endif //COM5C1
+        #endif //TCCR5A
+    }
 }
 
 class axis_t
 {
 public:
-    axis_t(int8_t step_pin, int8_t dir_pin, int8_t en_pin, int8_t joy_pin, int8_t dir_flip, uint8_t timer)
+    axis_t(int8_t step_pin, int8_t dir_pin, int8_t en_pin, int8_t joy_pin, int8_t dir_flip)
         : step_pin(step_pin)
         , dir_pin(dir_pin)
         , en_pin(en_pin)
         , joy_pin(joy_pin)
         , dir_flip(dir_flip)
-        , timer(timer)
     {};
 
     void init();
@@ -69,13 +314,12 @@ private:
     int8_t en_pin;
     int8_t joy_pin;
     int8_t dir_flip;
-    uint8_t timer;
 };
 
 axis_t axis[NUM_AXIS] =
 {
-    {0, 8, -1, A2, 1, 3},
-    {2, 7, -1, A3, 1, 4},
+    {0, 8, -1, A2, 1},
+    {2, 7, -1, A3, 1},
 };
 
 int8_t axis_t::joyToDirection(int16_t value)
@@ -96,30 +340,29 @@ uint16_t axis_t::joyToSpeed(int16_t value)
 
 void axis_t::init()
 {
-    timerInit(timer);
     pinMode(step_pin, OUTPUT); digitalWrite(step_pin, LOW);
     pinMode(dir_pin, OUTPUT); digitalWrite(dir_pin, LOW);
     pinMode(en_pin, OUTPUT); digitalWrite(en_pin, LOW);
     pinMode(joy_pin, INPUT); digitalWrite(joy_pin, LOW);
+    timerInit(digitalPinToTimer(step_pin));
 }
 
 void axis_t::process()
 {
     int16_t joyRead = analogRead(joy_pin);
     uint16_t timerVal = joyToSpeed(joyRead);
+    uint8_t timer = digitalPinToTimer(step_pin);
     
     int8_t stepperDirection = joyToDirection(joyRead);
     if (stepperDirection != 0)
     {
         digitalWrite(dir_pin, (stepperDirection > 0));
-        analogWrite(step_pin, timerVal);
+        timerSet(timer, timerVal);
     }
     else
     {
-        digitalWrite(step_pin, LOW);
+        timerDisable(timer);
     }
-    
-    analogUpdateTimer.start();
     
     static char outText[37];
     sprintf_P(outText, PSTR("%i, %hi, %u"), joyRead, stepperDirection, timerVal);
@@ -142,5 +385,6 @@ void loop() {
     {
         for (uint8_t i = 0; i < NUM_AXIS; i++)
             axis[i].process();
+        analogUpdateTimer.start();
     }
 }
