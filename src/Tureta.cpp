@@ -96,7 +96,7 @@ void axis_t::init()
     pinMode(step_pin, OUTPUT); digitalWrite(step_pin, LOW);
     pinMode(dir_pin, OUTPUT); digitalWrite(dir_pin, LOW);
     pinMode(en_pin, OUTPUT); digitalWrite(en_pin, LOW);
-    pinMode(joy_pin, INPUT);
+    pinMode(joy_pin, INPUT); digitalWrite(joy_pin, LOW);
 }
 
 void axis_t::process()
