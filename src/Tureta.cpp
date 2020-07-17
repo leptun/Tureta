@@ -1,9 +1,13 @@
 #include <Arduino.h>
 #include <wiring_private.h>
 #include <avr/pgmspace.h>
-#include "fastio.h"
 #include "Timer.h"
 #include "speed_lookuptable.h"
+
+#ifndef CRITICAL_SECTION_START
+  #define CRITICAL_SECTION_START  unsigned char _sreg = SREG; cli();
+  #define CRITICAL_SECTION_END    SREG = _sreg;
+#endif //CRITICAL_SECTION_START
 
 #define joyDeadzone 15
 #define NUM_AXIS 2
@@ -126,11 +130,6 @@ void setup() {
     Serial.begin(115200);
     UCSR0B &= ~(1<<RXEN0);
     Serial.println(F("start"));
-    
-    SET_OUTPUT(LED_BUILTIN);
-    WRITE(LED_BUILTIN, HIGH);
-    delay(100);
-    WRITE(LED_BUILTIN, LOW);
 
     for (uint8_t i = 0; i < NUM_AXIS; i++)
         axis[i].init();
