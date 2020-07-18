@@ -7,6 +7,8 @@
 extern const uint16_t speed_lookuptable_fast[256][2] PROGMEM;
 extern const uint16_t speed_lookuptable_slow[256][2] PROGMEM;
 
+#define MAX_TIMER 50
+
 #ifndef _NO_ASM
 
 // intRes = intIn1 * intIn2 >> 16
@@ -92,7 +94,7 @@ inline unsigned short calc_timer(uint16_t step_rate) {
   unsigned short timer;
 
   step_rate = min(step_rate, 40000);
-  step_rate >>= 1;
+  step_rate >>= 3;
 
   if(step_rate < (F_CPU/500000)) step_rate = (F_CPU/500000);
   step_rate -= (F_CPU/500000); // Correct for minimal speed
@@ -109,7 +111,7 @@ inline unsigned short calc_timer(uint16_t step_rate) {
     timer = (unsigned short)pgm_read_word_near(table_address);
     timer -= (((unsigned short)pgm_read_word_near(table_address+2) * (unsigned char)(step_rate & 0x0007))>>3);
   }
-  timer = max(timer, 50);
+  timer = max(timer, MAX_TIMER);
   return timer;
 }
 
