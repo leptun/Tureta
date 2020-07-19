@@ -1,0 +1,22 @@
+GND SIG VCC
+
+Base:
+Axis0 - Pan - White Black Blue
+Axis1 - Tilt - Red Green Yellow
+Axis2/3 - Trim - Orange Brown Purple
+
+Manunchi:
+
+GND - Light Gray
+
+B0 - Trigger - White -> MOSFET
+B1 - Center - Blue -> Arduino <- Stepper EN toggle
+B2 - Side - Yellow -> Arduino <- Nimic 1-0
+B3 - Right - Red -> Arduino <- Zoom
+D - UP - Brown
+D - DOWN - Green
+D - LEFT - Orange
+D - RIGHT - Black
+
+//VCC
+//GND
