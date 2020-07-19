@@ -94,7 +94,7 @@ inline unsigned short calc_timer(uint16_t step_rate) {
   unsigned short timer;
 
   step_rate = min(step_rate, 40000);
-  step_rate >>= 3;
+  // step_rate >>= 3;
 
   if(step_rate < (F_CPU/500000)) step_rate = (F_CPU/500000);
   step_rate -= (F_CPU/500000); // Correct for minimal speed

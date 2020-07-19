@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <wiring_private.h>
 #include "speed_lookuptable.h"
+#include "Tureta.h"
 
 #define OCR_MIN (MAX_TIMER/2)
 
@@ -22,8 +23,9 @@ void timerInit(uint8_t timer)
     #ifdef COM1C1
         case TIMER1C:
     #endif //COM1C1
-            cbi(TCCR1B, CS11);
-            sbi(TCCR1B, CS10);
+            cbi(TCCR1B, CS12);
+            sbi(TCCR1B, CS11);
+            cbi(TCCR1B, CS10);
             sbi(TCCR1B, WGM13);
             sbi(TCCR1B, WGM12);
             sbi(TCCR1A, WGM11);
@@ -47,8 +49,9 @@ void timerInit(uint8_t timer)
     #ifdef COM3C1
         case TIMER3C:
     #endif //COM3C1
-            cbi(TCCR3B, CS31);
-            sbi(TCCR3B, CS30);
+            cbi(TCCR3B, CS32);
+            sbi(TCCR3B, CS31);
+            cbi(TCCR3B, CS30);
             sbi(TCCR3B, WGM33);
             sbi(TCCR3B, WGM32);
             sbi(TCCR3A, WGM31);
@@ -72,8 +75,9 @@ void timerInit(uint8_t timer)
     #ifdef COM4C1
         case TIMER4C:
     #endif //COM4C1
-            cbi(TCCR4B, CS41);
-            sbi(TCCR4B, CS40);
+            cbi(TCCR4B, CS42);
+            sbi(TCCR4B, CS41);
+            cbi(TCCR4B, CS40);
             sbi(TCCR4B, WGM43);
             sbi(TCCR4B, WGM42);
             sbi(TCCR4A, WGM41);
@@ -97,8 +101,9 @@ void timerInit(uint8_t timer)
     #ifdef COM5C1
         case TIMER5C:
     #endif //COM5C1
-            cbi(TCCR5B, CS51);
-            sbi(TCCR5B, CS50);
+            cbi(TCCR5B, CS52);
+            sbi(TCCR5B, CS51);
+            cbi(TCCR5B, CS50);
             sbi(TCCR5B, WGM53);
             sbi(TCCR5B, WGM52);
             sbi(TCCR5A, WGM51);
@@ -132,19 +137,19 @@ void timerSet(uint8_t timer, uint16_t val)
         #ifdef COM1A1
             case TIMER1A:
                 sbi(TCCR1A, COM1A0);
-                OCR1A = val;
+                OCR1A = val>>1;
             break;
         #endif //COM1A1
         #ifdef COM1B1
             case TIMER1B:
-                sbi(TCCR1B, COM1B1);
+                sbi(TCCR1A, COM1B1);
                 OCR1A = val;
             break;
         #endif //COM1B1
         #ifdef COM1C1
         case TIMER1C:
             case TIMER1C:
-                sbi(TCCR1C, COM1C1);
+                sbi(TCCR1A, COM1C1);
                 OCR1A = val;
             break;
         #endif //COM1C1
@@ -154,7 +159,7 @@ void timerSet(uint8_t timer, uint16_t val)
         #ifdef COM3A1
             case TIMER3A:
                 sbi(TCCR3A, COM3A0);
-                OCR3A = val;
+                OCR3A = val>>1;
             break;
         #endif //COM3A1
         #ifdef COM3B1
@@ -164,14 +169,14 @@ void timerSet(uint8_t timer, uint16_t val)
                 #elif defined(__AVR_ATmega324PB__)
                 sbi(PORTB, PB7);
                 #endif
-                sbi(TCCR3B, COM3B1);
+                sbi(TCCR3A, COM3B1);
                 OCR3A = val;
             break;
         #endif //COM3B1
         #ifdef COM3C1
         case TIMER3C:
             case TIMER3C:
-                sbi(TCCR3C, COM3C1);
+                sbi(TCCR3A, COM3C1);
                 OCR3A = val;
             break;
         #endif //COM3C1
@@ -181,7 +186,7 @@ void timerSet(uint8_t timer, uint16_t val)
         #ifdef COM4A1
             case TIMER4A:
                 sbi(TCCR4A, COM4A0);
-                OCR4A = val;
+                OCR4A = val>>1;
             break;
         #endif //COM4A1
         #ifdef COM4B1
@@ -191,14 +196,14 @@ void timerSet(uint8_t timer, uint16_t val)
                 #elif defined(__AVR_ATmega324PB__)
                 sbi(PORTB, PB7);
                 #endif
-                sbi(TCCR4B, COM4B1);
+                sbi(TCCR4A, COM4B1);
                 OCR4A = val;
             break;
         #endif //COM4B1
         #ifdef COM4C1
         case TIMER4C:
             case TIMER4C:
-                sbi(TCCR4C, COM4C1);
+                sbi(TCCR4A, COM4C1);
                 OCR4A = val;
             break;
         #endif //COM4C1
@@ -208,25 +213,25 @@ void timerSet(uint8_t timer, uint16_t val)
         #ifdef COM5A1
             case TIMER5A:
                 sbi(TCCR5A, COM5A0);
-                OCR5A = val;
+                OCR5A = val>>1;
             break;
         #endif //COM5A1
         #ifdef COM5B1
             case TIMER5B:
-                sbi(TCCR5B, COM5B1);
+                sbi(TCCR5A, COM5B1);
                 OCR5A = val;
             break;
         #endif //COM5B1
         #ifdef COM5C1
         case TIMER5C:
             case TIMER5C:
-                sbi(TCCR5C, COM5C1);
+                sbi(TCCR5A, COM5C1);
                 OCR5A = val;
             break;
         #endif //COM5C1
         #endif //TCCR5A
     }
-    // sprintf_P(debugBuffer, PSTR("%hu, %hu, %u"), TCCR1A, TCCR1B, ICR1);
+    // sprintf_P(debugBuffer, PSTR("%hu, %hu, %u"), TCCR3A, TCCR3B, OCR3A);
     // Serial.println(debugBuffer);
 }
 

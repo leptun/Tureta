@@ -10,7 +10,7 @@
 #endif //CRITICAL_SECTION_START
 
 #define joyDeadzone 20
-#define NUM_AXIS 1
+#define NUM_AXIS (sizeof(axis) / sizeof(axis[0]))
 #define INPUT_PERIOD 10
 
 int16_t joyIdlePos = 512;
@@ -26,7 +26,9 @@ public:
         , en_pin(en_pin)
         , joy_pin(joy_pin)
         , dir_flip(dir_flip)
-    {};
+    {
+        timer = digitalPinToTimer(step_pin);
+    };
 
     void init();
     void process();
@@ -44,10 +46,10 @@ private:
     uint8_t timer;
 };
 
-axis_t axis[NUM_AXIS] =
+axis_t axis[] =
 {
-    {9, 8, -1, A2, 1},
-    // {2, 7, -1, A3, 1},
+    {2, 7, -1, A2, 1},
+    {9, 8, -1, A3, 1},
 };
 
 int8_t axis_t::joyToDirection(int16_t value)
@@ -72,7 +74,6 @@ void axis_t::init()
     pinMode(dir_pin, OUTPUT); digitalWrite(dir_pin, LOW);
     pinMode(en_pin, OUTPUT); digitalWrite(en_pin, LOW);
     pinMode(joy_pin, INPUT); digitalWrite(joy_pin, LOW);
-    timer = digitalPinToTimer(step_pin);
     timerInit(timer);
 }
 
@@ -93,8 +94,8 @@ void axis_t::process()
     }
     
     // sprintf_P(debugBuffer, PSTR("%i, %hi, %u"), joyRead, stepperDirection, timerVal);
-    sprintf_P(debugBuffer, PSTR("TCCR1A:%02hX, TCCR1B:%02hX, ICR1:%u, OCR1A:%u"), TCCR1A, TCCR1B, ICR1, OCR1A);
-    Serial.println(debugBuffer);
+    // sprintf_P(debugBuffer, PSTR("TCCR4A:%02hX, TCCR4B:%02hX, OCR4A:%u, OCR4B:%u"), TCCR4A, TCCR4B, OCR4A, OCR4B);
+    // Serial.println(debugBuffer);
 }
 
 void setup() {
