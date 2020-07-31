@@ -11,7 +11,7 @@
   #define CRITICAL_SECTION_END    SREG = _sreg;
 #endif //CRITICAL_SECTION_START
 
-#define joyDeadzone 20
+#define joyDeadzone 50
 #define NUM_AXIS (sizeof(axis) / sizeof(axis[0]))
 
 #define COMM_SYNC 0x69
@@ -39,50 +39,63 @@ struct
     uint8_t CRC;
 } remoteRegister;
 
+enum class direction_t : int8_t
+{
+    idle = 0,
+    MIN = -1,
+    MAX = 1,
+};
+
 class axis_t
 {
 public:
-    axis_t(int8_t step_pin, int8_t dir_pin, int8_t en_pin, uint8_t joy_chan, int8_t dir_flip)
+    axis_t(int8_t step_pin, int8_t dir_pin, int8_t en_pin, uint8_t joy_chan, int8_t dir_flip, int8_t endstop_MIN_pin, int8_t endstop_MAX_pin)
         : step_pin(step_pin)
         , dir_pin(dir_pin)
         , en_pin(en_pin)
         , joy_chan(joy_chan)
         , dir_flip(dir_flip)
+        , endstop_MIN_pin(endstop_MIN_pin)
+        , endstop_MAX_pin(endstop_MAX_pin)
         , timer(digitalPinToTimer(step_pin))
     {};
 
     void init();
     void process();
-    bool checkEndstops();
+    direction_t checkEndstops();
 
 private:
-    int8_t joyToDirection(int16_t value);
+    direction_t joyToDirection(int16_t value);
     uint16_t joyToSpeed(int16_t value);
 
-    int8_t step_pin;
-    int8_t dir_pin;
-    int8_t en_pin;
-    int8_t joy_chan;
-    int8_t dir_flip;
+    const int8_t step_pin;
+    const int8_t dir_pin;
+    const int8_t en_pin;
+    const int8_t joy_chan;
+    const int8_t dir_flip;
+    const int8_t endstop_MIN_pin;
+    const int8_t endstop_MAX_pin;
 
-    uint8_t timer;
+    const uint8_t timer;
+
+    direction_t direction = direction_t::idle;
 };
 
 axis_t axis[] =
 {
-    {2, 7, -1, 0, 1},
-    {9, 8, -1, 1, 1},
+    {2, 7, -1, 0, 1, A0, A1},
+    {9, 8, -1, 1, 1, A2, A3},
 };
 
-int8_t axis_t::joyToDirection(int16_t value)
+direction_t axis_t::joyToDirection(int16_t value)
 {
     int16_t delta = value - joyIdlePos;
     if (abs(delta) < joyDeadzone)
-        return 0;
+        return direction_t::idle;
     else if (delta < 0)
-        return -1 * dir_flip;
+        return (direction_t)(-1 * dir_flip);
     else
-        return 1 * dir_flip;
+        return (direction_t)(1 * dir_flip);
 }
 
 uint16_t axis_t::joyToSpeed(int16_t value)
@@ -95,6 +108,8 @@ void axis_t::init()
     pinMode(step_pin, OUTPUT); digitalWrite(step_pin, LOW);
     pinMode(dir_pin, OUTPUT); digitalWrite(dir_pin, LOW);
     pinMode(en_pin, OUTPUT); digitalWrite(en_pin, LOW);
+    pinMode(endstop_MIN_pin, INPUT_PULLUP);
+    pinMode(endstop_MAX_pin, INPUT_PULLUP);
     timerInit(timer);
 }
 
@@ -103,24 +118,38 @@ void axis_t::process()
     uint16_t joyRead = remoteRegister.JOY[joy_chan];
     uint16_t timerVal = joyToSpeed(joyRead);
     
-    int8_t stepperDirection = joyToDirection(joyRead);
-    if (stepperDirection != 0)
+    direction_t stepperDirection = joyToDirection(joyRead);
+    direction_t endstops = checkEndstops();
+    if (stepperDirection != direction_t::idle && (endstops == direction_t::idle || endstops != stepperDirection))
     {
-        digitalWrite(dir_pin, (stepperDirection > 0));
+        digitalWrite(dir_pin, stepperDirection == direction_t::MAX);
         timerSet(timer, timerVal);
     }
     else
     {
         timerDisable(timer);
     }
+    direction = stepperDirection;
     
-    printf_P(PSTR("%i, %hi, %u, %hu\n"), joyRead, stepperDirection, timerVal, timer);
+    // printf_P(PSTR("%i, %hi, %u, %hi\n"), joyRead, (int8_t)stepperDirection, timerVal, (int8_t)endstops);
     // printf_P(PSTR("TCCR4A:%02hX, TCCR4B:%02hX, OCR4A:%u, OCR4B:%u\n"), TCCR4A, TCCR4B, OCR4A, OCR4B);
 }
 
-bool axis_t::checkEndstops()
+direction_t axis_t::checkEndstops()
 {
-    return true;
+    direction_t tempState = direction_t::idle;
+    if (!digitalRead(endstop_MIN_pin))
+        tempState = direction_t::MIN;
+    else if (!digitalRead(endstop_MAX_pin))
+        tempState = direction_t::MAX;
+
+    if (tempState != direction_t::idle && direction == tempState)
+    {
+        timerDisable(timer);
+        direction = direction_t::idle;
+    }
+
+    return tempState;
 }
 
 void setup() {
