@@ -48,12 +48,12 @@ public:
         , en_pin(en_pin)
         , joy_chan(joy_chan)
         , dir_flip(dir_flip)
-    {
-        timer = digitalPinToTimer(step_pin);
-    };
+        , timer(digitalPinToTimer(step_pin))
+    {};
 
     void init();
     void process();
+    bool checkEndstops();
 
 private:
     int8_t joyToDirection(int16_t value);
@@ -114,8 +114,13 @@ void axis_t::process()
         timerDisable(timer);
     }
     
-    // printf_P(PSTR("%i, %hi, %u"), joyRead, stepperDirection, timerVal);
-    // printf_P(PSTR("TCCR4A:%02hX, TCCR4B:%02hX, OCR4A:%u, OCR4B:%u"), TCCR4A, TCCR4B, OCR4A, OCR4B);
+    printf_P(PSTR("%i, %hi, %u, %hu\n"), joyRead, stepperDirection, timerVal, timer);
+    // printf_P(PSTR("TCCR4A:%02hX, TCCR4B:%02hX, OCR4A:%u, OCR4B:%u\n"), TCCR4A, TCCR4B, OCR4A, OCR4B);
+}
+
+bool axis_t::checkEndstops()
+{
+    return true;
 }
 
 void setup() {
@@ -129,12 +134,15 @@ void setup() {
 }
 
 void loop() {
+    for (uint8_t i = 0; i < NUM_AXIS; i++)
+        axis[i].checkEndstops();
+
+
     if (!Serial1.available())
         return;
     
     uint8_t c = Serial1.read();
-    Serial.print(c, HEX);
-    Serial.print(' ');
+    printf_P(PSTR("%02hX "), c);
     if (comm_index == 0)
     {
         if (c != COMM_SYNC)
@@ -156,8 +164,6 @@ void loop() {
     CRC_reset();
     for (uint8_t* i = (uint8_t*)(&remoteRegister); i < (uint8_t*)(&remoteRegister) + comm_index - 1; i++)
     {
-        // Serial.print(*i, HEX);
-        // Serial.print(' ');
         CRC_add(*i);
     }
     if (remoteRegister.CRC != CRC_get())
