@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <avr/pgmspace.h>
+#include "Serial.h"
 #include "Timer.h"
 #include "speed_lookuptable.h"
 #include "hwTimer.h"
@@ -113,15 +114,13 @@ void axis_t::process()
         timerDisable(timer);
     }
     
-    // sprintf_P(debugBuffer, PSTR("%i, %hi, %u"), joyRead, stepperDirection, timerVal);
-    // sprintf_P(debugBuffer, PSTR("TCCR4A:%02hX, TCCR4B:%02hX, OCR4A:%u, OCR4B:%u"), TCCR4A, TCCR4B, OCR4A, OCR4B);
-    // Serial.println(debugBuffer);
+    // printf_P(PSTR("%i, %hi, %u"), joyRead, stepperDirection, timerVal);
+    // printf_P(PSTR("TCCR4A:%02hX, TCCR4B:%02hX, OCR4A:%u, OCR4B:%u"), TCCR4A, TCCR4B, OCR4A, OCR4B);
 }
 
 void setup() {
-    Serial.begin(115200);
+    UART_init(115200);
     // UCSR0B &= ~(1<<RXEN0);
-    Serial.println(F("start"));
 
     Serial1.begin(115200);
 
