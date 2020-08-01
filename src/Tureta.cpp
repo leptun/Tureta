@@ -1,15 +1,12 @@
 #include <Arduino.h>
 #include <avr/pgmspace.h>
+#include "macros.h"
 #include "Serial.h"
 #include "Timer.h"
 #include "speed_lookuptable.h"
 #include "hwTimer.h"
 #include "CRC.h"
-
-#ifndef CRITICAL_SECTION_START
-  #define CRITICAL_SECTION_START  unsigned char _sreg = SREG; cli();
-  #define CRITICAL_SECTION_END    SREG = _sreg;
-#endif //CRITICAL_SECTION_START
+#include "GPIO.h"
 
 #define joyDeadzone 50
 #define NUM_AXIS (sizeof(axis) / sizeof(axis[0]))
@@ -49,14 +46,14 @@ enum class direction_t : int8_t
 class axis_t
 {
 public:
-    axis_t(int8_t step_pin, int8_t dir_pin, int8_t en_pin, uint8_t joy_chan, int8_t dir_flip, int8_t endstop_MIN_pin, int8_t endstop_MAX_pin)
-        : step_pin(step_pin)
-        , dir_pin(dir_pin)
-        , en_pin(en_pin)
+    axis_t(uint8_t step_pin, uint8_t dir_pin, uint8_t en_pin, uint8_t endstop_MIN_pin, uint8_t endstop_MAX_pin, uint8_t joy_chan, direction_t dir_flip)
+        : step_pin(GPIO(step_pin))
+        , dir_pin(GPIO(dir_pin))
+        , en_pin(GPIO(en_pin))
+        , endstop_MIN_pin(GPIO(endstop_MIN_pin))
+        , endstop_MAX_pin(GPIO(endstop_MAX_pin))
         , joy_chan(joy_chan)
         , dir_flip(dir_flip)
-        , endstop_MIN_pin(endstop_MIN_pin)
-        , endstop_MAX_pin(endstop_MAX_pin)
         , timer(digitalPinToTimer(step_pin))
     {};
 
@@ -68,14 +65,9 @@ private:
     direction_t joyToDirection(int16_t value);
     uint16_t joyToSpeed(int16_t value);
 
-    const int8_t step_pin;
-    const int8_t dir_pin;
-    const int8_t en_pin;
-    const int8_t joy_chan;
-    const int8_t dir_flip;
-    const int8_t endstop_MIN_pin;
-    const int8_t endstop_MAX_pin;
-
+    GPIO step_pin, dir_pin, en_pin, endstop_MIN_pin, endstop_MAX_pin;
+    const uint8_t joy_chan;
+    const direction_t dir_flip;
     const uint8_t timer;
 
     direction_t direction = direction_t::idle;
@@ -83,8 +75,8 @@ private:
 
 axis_t axis[] =
 {
-    {2, 7, -1, 0, 1, A0, A1},
-    {9, 8, -1, 1, 1, A2, A3},
+    {2, 7, 22, A0, A1, 0, direction_t::MAX},
+    {9, 8, 23, A2, A3, 1, direction_t::MAX},
 };
 
 direction_t axis_t::joyToDirection(int16_t value)
@@ -93,9 +85,9 @@ direction_t axis_t::joyToDirection(int16_t value)
     if (abs(delta) < joyDeadzone)
         return direction_t::idle;
     else if (delta < 0)
-        return (direction_t)(-1 * dir_flip);
+        return (direction_t)(-1 * (int8_t)dir_flip);
     else
-        return (direction_t)(1 * dir_flip);
+        return (direction_t)(1 * (int8_t)dir_flip);
 }
 
 uint16_t axis_t::joyToSpeed(int16_t value)
@@ -105,11 +97,11 @@ uint16_t axis_t::joyToSpeed(int16_t value)
 
 void axis_t::init()
 {
-    pinMode(step_pin, OUTPUT); digitalWrite(step_pin, LOW);
-    pinMode(dir_pin, OUTPUT); digitalWrite(dir_pin, LOW);
-    pinMode(en_pin, OUTPUT); digitalWrite(en_pin, LOW);
-    pinMode(endstop_MIN_pin, INPUT_PULLUP);
-    pinMode(endstop_MAX_pin, INPUT_PULLUP);
+    step_pin.write(LOW); step_pin.setOutput();
+    dir_pin.write(LOW); dir_pin.setOutput();
+    en_pin.write(LOW); en_pin.setOutput();
+    en_pin.write(HIGH); en_pin.setInput();
+    en_pin.write(HIGH); en_pin.setInput();
     timerInit(timer);
 }
 
@@ -122,7 +114,7 @@ void axis_t::process()
     direction_t endstops = checkEndstops();
     if (stepperDirection != direction_t::idle && (endstops == direction_t::idle || endstops != stepperDirection))
     {
-        digitalWrite(dir_pin, stepperDirection == direction_t::MAX);
+        dir_pin.write(stepperDirection == direction_t::MAX);
         timerSet(timer, timerVal);
     }
     else
@@ -138,9 +130,9 @@ void axis_t::process()
 direction_t axis_t::checkEndstops()
 {
     direction_t tempState = direction_t::idle;
-    if (!digitalRead(endstop_MIN_pin))
+    if (!endstop_MIN_pin.read())
         tempState = direction_t::MIN;
-    else if (!digitalRead(endstop_MAX_pin))
+    else if (!endstop_MAX_pin.read())
         tempState = direction_t::MAX;
 
     if (tempState != direction_t::idle && direction == tempState)
