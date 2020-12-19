@@ -103,8 +103,8 @@ void axis_t::init()
     step_pin.write(LOW); step_pin.setOutput();
     dir_pin.write(LOW); dir_pin.setOutput();
     en_pin.write(LOW); en_pin.setOutput();
-    en_pin.write(HIGH); en_pin.setInput();
-    en_pin.write(HIGH); en_pin.setInput();
+    endstop_MIN_pin.write(HIGH); endstop_MIN_pin.setInput();
+    endstop_MAX_pin.write(HIGH); endstop_MAX_pin.setInput();
     timerInit(timer);
 }
 
