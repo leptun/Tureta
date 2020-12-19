@@ -20,3 +20,8 @@ D - RIGHT - Black
 
 //VCC
 //GND
+
+Rasnita jack:
+Tip - GND
+Ring - Tg
+Sleeeeeve - VCC
