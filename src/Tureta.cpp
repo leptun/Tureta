@@ -7,6 +7,7 @@
 #include "hwTimer.h"
 #include "CRC.h"
 #include "GPIO.h"
+#include "Rasnita.h"
 
 #define joyDeadzone 50
 #define NUM_AXIS (sizeof(axis) / sizeof(axis[0]))
@@ -75,9 +76,11 @@ private:
 
 axis_t axis[] =
 {
-    {2, 7, 22, A0, A1, 0, direction_t::MAX},
-    {9, 8, 23, A2, A3, 1, direction_t::MAX},
+    {2, 5, 6, A0, A1, 0, direction_t::MAX},
+    {9, 8, 7, A2, A3, 1, direction_t::MAX},
 };
+
+rasnita_t rasnita(4);
 
 direction_t axis_t::joyToDirection(int16_t value)
 {
@@ -152,6 +155,7 @@ void setup() {
 
     for (uint8_t i = 0; i < NUM_AXIS; i++)
         axis[i].init();
+    rasnita.init();
 }
 
 void loop() {
@@ -197,5 +201,7 @@ void loop() {
 
     for (uint8_t i = 0; i < NUM_AXIS; i++)
         axis[i].process();
+
+    rasnita.process(remoteRegister.GPIO.Button0 || remoteRegister.GPIO.Button2);
     comm_index = 0;
 }
