@@ -8,6 +8,7 @@
 #include "CRC.h"
 #include "GPIO.h"
 #include "Rasnita.h"
+#include "Button.h"
 
 #define joyDeadzone 50
 #define NUM_AXIS (sizeof(axis) / sizeof(axis[0]))
@@ -18,6 +19,9 @@
 
 const int16_t joyIdlePos = 512;
 uint8_t comm_index = 0;
+
+toggle_t steppersEnabled;
+
 
 struct
 {
@@ -61,6 +65,7 @@ public:
     void init();
     void process();
     direction_t checkEndstops();
+    void setEn(bool en);
 
 private:
     direction_t joyToDirection(int16_t value);
@@ -102,7 +107,7 @@ void axis_t::init()
 {
     step_pin.write(LOW); step_pin.setOutput();
     dir_pin.write(LOW); dir_pin.setOutput();
-    en_pin.write(LOW); en_pin.setOutput();
+    en_pin.write(HIGH); en_pin.setOutput(); //initialize as disabled
     endstop_MIN_pin.write(HIGH); endstop_MIN_pin.setInput();
     endstop_MAX_pin.write(HIGH); endstop_MAX_pin.setInput();
     timerInit(timer);
@@ -146,6 +151,10 @@ direction_t axis_t::checkEndstops()
 
     return tempState;
 }
+void axis_t::setEn(bool enabled)
+{
+    en_pin.write(!enabled); //active low signal
+}
 
 void setup() {
     UART_init(115200);
@@ -153,15 +162,18 @@ void setup() {
 
     Serial1.begin(115200);
 
-    for (uint8_t i = 0; i < NUM_AXIS; i++)
-        axis[i].init();
+    for (auto a : axis)
+        a.init();
     rasnita.init();
 }
 
 void loop() {
-    for (uint8_t i = 0; i < NUM_AXIS; i++)
-        axis[i].checkEndstops();
-
+    for (auto a : axis)
+        a.checkEndstops();
+    
+    if (steppersEnabled.update(remoteRegister.GPIO.Button1))
+        for (auto a : axis)
+            a.setEn(steppersEnabled.getToggleVal());
 
     if (!Serial1.available())
         return;
@@ -199,8 +211,8 @@ void loop() {
     }
     Serial.println(F("OK"));
 
-    for (uint8_t i = 0; i < NUM_AXIS; i++)
-        axis[i].process();
+    for (auto a : axis)
+        a.process();
 
     rasnita.process(remoteRegister.GPIO.Button0 || remoteRegister.GPIO.Button2);
     comm_index = 0;
