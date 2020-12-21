@@ -101,7 +101,7 @@ direction_t axis_t::joyToDirection(int16_t value)
 
 uint16_t axis_t::joyToSpeed(int16_t value)
 {
-    return calc_timer(map(abs(value - joyIdlePos), joyDeadzone, joyIdlePos, 32, 2000));
+    return calc_timer(map(abs(value - joyIdlePos), joyDeadzone, joyIdlePos, 32, 4000));
 }
 
 void axis_t::init()
