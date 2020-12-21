@@ -21,6 +21,7 @@ const int16_t joyIdlePos = 512;
 uint8_t comm_index = 0;
 
 toggle_t steppersEnabled;
+toggle_t motionEnabled(true);
 
 
 struct
@@ -39,7 +40,7 @@ struct
         uint8_t DpadDOWN : 1;
     } GPIO;
     uint8_t CRC;
-} remoteRegister;
+} remoteRegister, _remoteRegister;
 
 enum class direction_t : int8_t
 {
@@ -120,7 +121,7 @@ void axis_t::process()
     
     direction_t stepperDirection = joyToDirection(joyRead);
     direction_t endstops = checkEndstops();
-    if (stepperDirection != direction_t::idle && (endstops == direction_t::idle || endstops != stepperDirection))
+    if (stepperDirection != direction_t::idle && (endstops == direction_t::idle || endstops != stepperDirection) && motionEnabled.getToggleVal())
     {
         dir_pin.write(stepperDirection == direction_t::MAX);
         timerSet(timer, timerVal);
@@ -167,53 +168,62 @@ void setup() {
     rasnita.init();
 }
 
+bool serialUpdate()
+{
+    if (!Serial1.available())
+        return false;
+    
+    uint8_t c = Serial1.read();
+    // printf_P(PSTR("%02hX "), c);
+    if (comm_index == 0)
+    {
+        if (c != COMM_SYNC)
+        {
+            Serial.println(F("~!SYNC"));
+            return false;
+        }
+    }
+    else
+    {
+        *((uint8_t*)(&_remoteRegister) + comm_index) = c;
+    }
+    
+    comm_index++;
+    
+    if (comm_index < sizeof(_remoteRegister))
+        return false; //not all data was received
+
+    CRC_reset();
+    for (uint8_t* i = (uint8_t*)(&_remoteRegister); i < (uint8_t*)(&_remoteRegister) + comm_index - 1; i++)
+    {
+        CRC_add(*i);
+    }
+    if (_remoteRegister.CRC != CRC_get())
+    {
+        Serial.println(F("CRC ERROR"));
+        comm_index = 0;
+        return false;
+    }
+    // Serial.println(F("OK"));
+    comm_index = 0;
+    memcpy(&remoteRegister, &_remoteRegister, sizeof(remoteRegister));
+    return true;
+}
+
 void loop() {
+    bool updated = serialUpdate();
+
     for (auto a : axis)
         a.checkEndstops();
     
     if (steppersEnabled.update(remoteRegister.GPIO.Button1))
         for (auto a : axis)
             a.setEn(steppersEnabled.getToggleVal());
-
-    if (!Serial1.available())
-        return;
     
-    uint8_t c = Serial1.read();
-    printf_P(PSTR("%02hX "), c);
-    if (comm_index == 0)
-    {
-        if (c != COMM_SYNC)
-        {
-            Serial.println(F("~!SYNC"));
-            return;
-        }
-    }
-    else
-    {
-        *((uint8_t*)(&remoteRegister) + comm_index) = c;
-    }
-    
-    comm_index++;
-    
-    if (comm_index < sizeof(remoteRegister))
-        return; //not all data was received
-
-    CRC_reset();
-    for (uint8_t* i = (uint8_t*)(&remoteRegister); i < (uint8_t*)(&remoteRegister) + comm_index - 1; i++)
-    {
-        CRC_add(*i);
-    }
-    if (remoteRegister.CRC != CRC_get())
-    {
-        Serial.println(F("CRC ERROR"));
-        comm_index = 0;
-        return;
-    }
-    Serial.println(F("OK"));
-
-    for (auto a : axis)
-        a.process();
+    motionEnabled.update(remoteRegister.GPIO.Button3);
 
     rasnita.process(remoteRegister.GPIO.Button0 || remoteRegister.GPIO.Button2);
-    comm_index = 0;
+    if (updated)
+        for (auto a : axis)
+            a.process();
 }
