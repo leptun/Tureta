@@ -82,11 +82,12 @@ private:
 
 axis_t axis[] =
 {
-    {2, 5, 6, A0, A1, 0, direction_t::MAX},
-    {9, 8, 7, A2, A3, 1, direction_t::MAX},
+    {2, 3, 4, A7, A6, 0, direction_t::MAX},
+    {9, 8, 7, A5, A4, 1, direction_t::MAX},
 };
-
-rasnita_t rasnita(4);
+rasnita_t rasnita(6);
+GPIO JOY_RESET(10);
+GPIO BEEPER(13);
 
 direction_t axis_t::joyToDirection(int16_t value)
 {
@@ -139,9 +140,9 @@ void axis_t::process()
 direction_t axis_t::checkEndstops()
 {
     direction_t tempState = direction_t::idle;
-    if (!endstop_MIN_pin.read())
+    if (endstop_MIN_pin.read())
         tempState = direction_t::MIN;
-    else if (!endstop_MAX_pin.read())
+    else if (endstop_MAX_pin.read())
         tempState = direction_t::MAX;
 
     if (tempState != direction_t::idle && direction == tempState)
@@ -174,7 +175,7 @@ bool serialUpdate()
         return false;
     
     uint8_t c = Serial1.read();
-    // printf_P(PSTR("%02hX "), c);
+    printf_P(PSTR("%02hX "), c);
     if (comm_index == 0)
     {
         if (c != COMM_SYNC)
@@ -204,7 +205,7 @@ bool serialUpdate()
         comm_index = 0;
         return false;
     }
-    // Serial.println(F("OK"));
+    Serial.println(F("OK"));
     comm_index = 0;
     memcpy(&remoteRegister, &_remoteRegister, sizeof(remoteRegister));
     return true;
