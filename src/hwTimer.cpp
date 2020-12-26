@@ -2,14 +2,12 @@
 #include <stdio.h>
 #include <wiring_private.h>
 #include "speed_lookuptable.h"
-#include "Tureta.h"
 
 #define OCR_MIN (MAX_TIMER/2)
 
 void timerInit(uint8_t timer)
 {
-    // sprintf_P(debugBuffer, PSTR("timerInit: %hu"), timer);
-    // Serial.println(debugBuffer);
+    // printf_P(PSTR("timerInit: %hu"), timer);
 
     switch (timer)
     {
@@ -122,14 +120,12 @@ void timerInit(uint8_t timer)
             Serial.print(timer);
             Serial.println(F(" is not a valid timer!"));
     }
-    // sprintf_P(debugBuffer, PSTR("%hu, %hu, %u"), TCCR1A, TCCR1B, ICR1);
-    // Serial.println(debugBuffer);
+    // printf_P(PSTR("%hu, %hu, %u"), TCCR1A, TCCR1B, ICR1);
 }
 
 void timerSet(uint8_t timer, uint16_t val)
 {
-    // sprintf_P(debugBuffer, PSTR("timerSet: %hu, %u"), timer, val);
-    // Serial.println(debugBuffer);
+    // printf_P(PSTR("timerSet: %hu, %u"), timer, val);
 
     switch (timer)
     {
@@ -231,14 +227,12 @@ void timerSet(uint8_t timer, uint16_t val)
         #endif //COM5C1
         #endif //TCCR5A
     }
-    // sprintf_P(debugBuffer, PSTR("%hu, %hu, %u"), TCCR3A, TCCR3B, OCR3A);
-    // Serial.println(debugBuffer);
+    // printf_P(PSTR("%hu, %hu, %u"), TCCR3A, TCCR3B, OCR3A);
 }
 
 void timerDisable(uint8_t timer)
 {
-    // sprintf_P(debugBuffer, PSTR("timerDisable: %hu"), timer);
-    // Serial.println(debugBuffer);
+    // printf_P(PSTR("timerDisable: %hu"), timer);
 
     switch (timer)
     {
@@ -329,6 +323,5 @@ void timerDisable(uint8_t timer)
         #endif //TCCR5A
     }
 
-    // sprintf_P(debugBuffer, PSTR("%hu, %hu, %u"), TCCR1A, TCCR1B, ICR1);
-    // Serial.println(debugBuffer);
+    // printf_P(PSTR("%hu, %hu, %u"), TCCR1A, TCCR1B, ICR1);
 }
