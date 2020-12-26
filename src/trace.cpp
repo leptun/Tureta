@@ -22,5 +22,5 @@ void trace_init(unsigned long baud)
     fdev_setup_stream(&uartout, uart_putchar, NULL, _FDEV_SETUP_WRITE); //setup uart out stream
     stdout = &uartout;
     
-    printf_P(PSTR("start\n")); //puts_P isn't more efficient here since we don't use it anywhere else.
+    puts_P(PSTR("start"));
 }
