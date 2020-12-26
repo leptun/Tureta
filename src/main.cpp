@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <avr/pgmspace.h>
 #include "macros.h"
-#include "Serial.h"
+#include "trace.h"
 #include "Timer.h"
 #include "speed_lookuptable.h"
 #include "hwTimer.h"
@@ -159,8 +159,7 @@ void axis_t::setEn(bool enabled)
 }
 
 void setup() {
-    UART_init(115200);
-    // UCSR0B &= ~(1<<RXEN0);
+    trace_init(115200);
 
     Serial1.begin(115200);
 
