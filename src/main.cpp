@@ -9,38 +9,15 @@
 #include "GPIO.h"
 #include "Rasnita.h"
 #include "Button.h"
+#include "Joystick.h"
 
 #define joyDeadzone 50
-#define NUM_AXIS (sizeof(axis) / sizeof(axis[0]))
-
-#define COMM_SYNC 0x69
-#define COMM_BAUD 115200
-#define ADC_CHAN_CNT 3
 
 const int16_t joyIdlePos = 512;
-uint8_t comm_index = 0;
 
 toggle_t steppersEnabled;
 toggle_t motionEnabled(true);
 
-
-struct
-{
-    const uint8_t SYNC = COMM_SYNC;
-    uint16_t JOY[ADC_CHAN_CNT];
-    struct
-    {
-        uint8_t Button0 : 1;
-        uint8_t Button1 : 1;
-        uint8_t Button2 : 1;
-        uint8_t Button3 : 1;
-        uint8_t DpadUP : 1;
-        uint8_t DpadRIGHT : 1;
-        uint8_t DpadLEFT : 1;
-        uint8_t DpadDOWN : 1;
-    } GPIO;
-    uint8_t CRC;
-} remoteRegister, _remoteRegister;
 
 enum class direction_t : int8_t
 {
@@ -161,57 +138,15 @@ void axis_t::setEn(bool enabled)
 void setup() {
     trace_init(115200);
 
-    Serial1.begin(115200);
+    joystick_init();
 
     for (auto a : axis)
         a.init();
     rasnita.init();
 }
 
-bool serialUpdate()
-{
-    if (!Serial1.available())
-        return false;
-    
-    uint8_t c = Serial1.read();
-    printf_P(PSTR("%02hX "), c);
-    if (comm_index == 0)
-    {
-        if (c != COMM_SYNC)
-        {
-            Serial.println(F("~!SYNC"));
-            return false;
-        }
-    }
-    else
-    {
-        *((uint8_t*)(&_remoteRegister) + comm_index) = c;
-    }
-    
-    comm_index++;
-    
-    if (comm_index < sizeof(_remoteRegister))
-        return false; //not all data was received
-
-    CRC_reset();
-    for (uint8_t* i = (uint8_t*)(&_remoteRegister); i < (uint8_t*)(&_remoteRegister) + comm_index - 1; i++)
-    {
-        CRC_add(*i);
-    }
-    if (_remoteRegister.CRC != CRC_get())
-    {
-        Serial.println(F("CRC ERROR"));
-        comm_index = 0;
-        return false;
-    }
-    Serial.println(F("OK"));
-    comm_index = 0;
-    memcpy(&remoteRegister, &_remoteRegister, sizeof(remoteRegister));
-    return true;
-}
-
 void loop() {
-    bool updated = serialUpdate();
+    bool updated = joystick_update();
 
     for (auto a : axis)
         a.checkEndstops();
