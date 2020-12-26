@@ -7,7 +7,7 @@
 extern const uint16_t speed_lookuptable_fast[256][2] PROGMEM;
 extern const uint16_t speed_lookuptable_slow[256][2] PROGMEM;
 
-#define MAX_TIMER 50
+#define MAX_TIMER 50u
 
 #ifndef _NO_ASM
 
