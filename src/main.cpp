@@ -21,9 +21,10 @@ toggle_t motionEnabled(true);
 
 enum class direction_t : int8_t
 {
-    idle = 0,
     MIN = -1,
+    idle = 0,
     MAX = 1,
+    ERROR = 2,
 };
 
 class axis_t
@@ -99,7 +100,7 @@ void axis_t::process()
     
     direction_t stepperDirection = joyToDirection(joyRead);
     direction_t endstops = checkEndstops();
-    if (stepperDirection != direction_t::idle && (endstops == direction_t::idle || endstops != stepperDirection) && motionEnabled.getToggleVal())
+    if (stepperDirection != direction_t::idle && ((endstops == direction_t::idle || endstops != stepperDirection) && endstops != direction_t::ERROR) && motionEnabled.getToggleVal())
     {
         dir_pin.write(stepperDirection == direction_t::MAX);
         timerSet(timer, timerVal);
@@ -117,12 +118,14 @@ void axis_t::process()
 direction_t axis_t::checkEndstops()
 {
     direction_t tempState = direction_t::idle;
-    if (endstop_MIN_pin.read())
+    if (endstop_MIN_pin.read() && endstop_MAX_pin.read())
+        tempState = direction_t::ERROR;
+    else if (endstop_MIN_pin.read())
         tempState = direction_t::MIN;
     else if (endstop_MAX_pin.read())
         tempState = direction_t::MAX;
 
-    if (tempState != direction_t::idle && direction == tempState)
+    if ((tempState != direction_t::idle && direction == tempState) || tempState == direction_t::ERROR)
     {
         timerDisable(timer);
         direction = direction_t::idle;
