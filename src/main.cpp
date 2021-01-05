@@ -141,6 +141,11 @@ void axis_t::setEn(bool enabled)
 void setup() {
     trace_init(115200);
 
+    BEEPER.write(HIGH);
+    BEEPER.setOutput();
+    delay(250);
+    BEEPER.write(LOW);
+
     joystick_init();
 
     for (auto a : axis)
