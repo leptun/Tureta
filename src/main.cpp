@@ -5,7 +5,6 @@
 #include "Timer.h"
 #include "speed_lookuptable.h"
 #include "hwTimer.h"
-#include "CRC.h"
 #include "GPIO.h"
 #include "Rasnita.h"
 #include "Button.h"
@@ -64,7 +63,6 @@ axis_t axis[] =
     {9, 8, 7, A5, A4, 1, direction_t::MAX},
 };
 rasnita_t rasnita(6);
-GPIO JOY_RESET(10);
 GPIO BEEPER(13);
 
 direction_t axis_t::joyToDirection(int16_t value)

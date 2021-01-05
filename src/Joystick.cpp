@@ -2,8 +2,11 @@
 #include <stdio.h>
 #include <Arduino.h>
 #include "CRC.h"
+#include "GPIO.h"
 
 remoteRegister_t remoteRegister, _remoteRegister;
+
+GPIO JOY_RESET(10);
 
 bool joystick_update()
 {
